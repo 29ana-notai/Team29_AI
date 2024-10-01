@@ -22,7 +22,7 @@ server_client = ServerClient()
 def process_llm(self, lecture_material: str, stt_result: str, user_text: str) -> Dict:
     self.update_state(state='PROCESSING')
     try:
-        result = process_text(lecture_material, stt_result, user_text)
+        result = generate_summary_and_problem(lecture_material, stt_result, user_text)
         server_client.send_llm_result(self.request.id, result['summary'], result['problem'])
         return result
     except Exception as e:
