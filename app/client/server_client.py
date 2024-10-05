@@ -28,5 +28,28 @@ class ServerClient:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            logger.error(f"서버에 결과를 전송하는 중 오류가 발생했습니다: {e}")
+            logger.error(f"서버에 LLM 결과를 전송하는 중 오류가 발생했습니다: {e}")
+            return None
+
+    def send_stt_result(self, task_id: str, stt_result: Dict) -> Optional[Dict]:
+        endpoint = f"{self.base_url}/api/ai/stt/callback"
+        
+        payload = {
+            "taskId": task_id,
+            "text": stt_result["text"],
+            "words": stt_result["words"],
+            "language": stt_result["language"],
+            "languageProbability": stt_result["language_probability"]
+        }
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            response = requests.post(endpoint, json=payload, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"서버에 STT 결과를 전송하는 중 오류가 발생했습니다: {e}")
             return None

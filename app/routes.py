@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.task.celery_tasks import process_llm
+from app.task.celery_tasks import process_llm, process_stt
 from app import celery
 import logging
 
@@ -27,15 +27,26 @@ def get_task_info(task_id):
         }
     return response
 
-# Todo: stt 모델 구현 후 추가
-# @api.route('/stt', methods=['POST'])
-# def stt_endpoint():
-#     if 'audio' not in request.files:
-#         return jsonify({"error": "오디오 파일이 제공되지 않았습니다"}), 400
-    
-#     audio_data = request.files['audio'].read()
-#     task = process_stt.delay(audio_data)
-#     return jsonify({"task_id": task.id, "task_type": "stt"}), 202
+@api.route('/stt', methods=['POST'])
+def stt_endpoint():
+    try:
+        if 'audio' not in request.files:
+            return jsonify({"error": "오디오 파일이 제공되지 않았습니다"}), 400
+        
+        audio_file = request.files['audio']
+        
+        if audio_file.filename == '':
+            return jsonify({"error": "선택된 파일이 없습니다"}), 400
+        
+        if not audio_file.filename.lower().endswith('.mp3'):
+            return jsonify({"error": "MP3 파일만 지원됩니다"}), 400
+        
+        audio_data = audio_file.read()
+        task = process_stt.delay(audio_data)
+        return jsonify({"taskId": task.id, "taskType": "stt"}), 202
+    except Exception as e:
+        logger.error(f"STT 엔드포인트 오류: {str(e)}", exc_info=True)
+        return jsonify({"error": "서버 내부 오류가 발생했습니다"}), 500
 
 @api.route('/llm', methods=['POST'])
 def llm_endpoint():
