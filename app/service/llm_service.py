@@ -5,7 +5,7 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
-def process_text(lecture_material: str, stt_result: str, user_text: str) -> Dict[str, str]:
+def generate_summary_and_problem(lecture_material: str, stt_result: str, user_text: str) -> Dict[str, str]:
     client = LLMAPIClient()
     try:
         summary = client.summarize(lecture_material, stt_result, user_text)
