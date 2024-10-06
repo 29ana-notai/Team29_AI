@@ -1,5 +1,5 @@
 from openai import OpenAI
-from ..config import Config
+from ..config.app_config import Config
 from app.util.preprocessing import preprocess_lecture_content
 from app.util.prompt_builder import build_summary_prompt, build_problem_prompt
 import logging

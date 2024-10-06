@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from app.stt_config import STTConfig
+from app.config.stt_config import STTConfig
 import logging
 import io
 from pydub import AudioSegment, effects
@@ -12,29 +12,29 @@ class STTModel:
         try:
             self.use_faster_whisper = STTConfig.USE_FASTER_WHISPER
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            self.compute_type = self._get_compute_type()
-            self.model = self._initialize_model()
+            self.compute_type = self.get_compute_type()
+            self.model = self.initialize_model()
         except Exception as e:
             logger.error(f"STTModel 초기화 중 오류 발생: {str(e)}", exc_info=True)
             raise
 
-    def _get_compute_type(self):
+    def get_compute_type(self):
         if self.device == "cuda":
             return "float16"
         return "int8" if self.use_faster_whisper else "float32"
 
-    def _initialize_model(self):
+    def initialize_model(self):
         if self.use_faster_whisper:
-            return self._initialize_faster_whisper()
-        return self._initialize_whisper()
+            return self.initialize_faster_whisper()
+        return self.initialize_whisper()
 
-    def _initialize_faster_whisper(self):
+    def initialize_faster_whisper(self):
         from faster_whisper import WhisperModel
         model = WhisperModel(STTConfig.MODEL_SIZE, device=self.device, compute_type=self.compute_type)
         logger.info(f"STTModel 초기화 완료 (faster_whisper 사용, device: {self.device}, compute_type: {self.compute_type})")
         return model
 
-    def _initialize_whisper(self):
+    def initialize_whisper(self):
         import whisper
         model = whisper.load_model(STTConfig.MODEL_SIZE).to(self.device)
         if self.device == "cuda":
@@ -60,9 +60,9 @@ class STTModel:
             if self.use_faster_whisper:
                 result = self._transcribe_faster_whisper(preprocessed_audio)
             else:
-                result = self._transcribe_whisper(preprocessed_audio)
+                result = self.transcribe_whisper(preprocessed_audio)
 
-            words_with_timestamps = self._normalize_timestamps(result['words'], result['audio_length'])
+            words_with_timestamps = self.normalize_timestamps(result['words'], result['audio_length'])
 
             return {
                 "text": result['full_text'].strip(),
@@ -91,15 +91,13 @@ class STTModel:
             'audio_length': info.duration
         }
 
-    def _transcribe_whisper(self, preprocessed_audio):
+    def transcribe_whisper(self, preprocessed_audio):
         audio_array = np.frombuffer(preprocessed_audio, dtype=np.int16).astype(np.float32) / STTConfig.AUDIO_NORMALIZATION_FACTOR
         if self.device == "cuda":
             audio_array = torch.from_numpy(audio_array).to(self.device).half()
         result = self.model.transcribe(audio_array, language="ko")
-        words = [
-            {"word": segment["text"], "start": segment["start"], "end": segment["end"]}
-            for segment in result["segments"]
-        ]
+        words = [{"word": segment["text"], "start": segment["start"], "end": segment["end"]}
+            for segment in result["segments"]]
         return {
             'full_text': result["text"],
             'words': words,
@@ -108,7 +106,7 @@ class STTModel:
             'audio_length': len(audio_array) / STTConfig.SAMPLE_RATE
         }
 
-    def _normalize_timestamps(self, words, audio_length):
+    def normalize_timestamps(self, words, audio_length):
         def normalize_time(time):
             return min(time * audio_length / words[-1]['end'], audio_length)
 

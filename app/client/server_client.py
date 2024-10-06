@@ -1,6 +1,6 @@
 import requests
 import json
-from app.config import Config
+from app.config.app_config import Config
 import logging
 from typing import Optional, Dict
 
