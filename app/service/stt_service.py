@@ -3,9 +3,15 @@ import logging
 from app.model.stt_model import STTModel
 
 logger = logging.getLogger(__name__)
-stt_model = STTModel()
 
-def transcribe_audio(audio_data):
+def initialize_stt_model(gpu_memory_fraction=0.3):
+    logger.info(f"STT 모델을 GPU 메모리 비율 {gpu_memory_fraction}로 초기화합니다")
+    stt_model = STTModel(gpu_memory_fraction=gpu_memory_fraction)
+    stt_model.initialize_model()
+    logger.info("STT 모델 초기화가 완료되었습니다")
+    return stt_model
+
+def transcribe_audio(audio_data, stt_model):
     try:
         audio_stream = io.BytesIO(audio_data)
         audio_stream.seek(0)

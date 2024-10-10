@@ -1,6 +1,5 @@
 from flask import Flask
 from celery import Celery
-from app.config.celery_config import broker_url, result_backend, task_serializer, result_serializer, accept_content, timezone, enable_utc
 from app.config.logging_config import configure_logging
 
 configure_logging()

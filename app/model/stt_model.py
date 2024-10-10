@@ -8,15 +8,12 @@ from pydub import AudioSegment, effects
 logger = logging.getLogger(__name__)
 
 class STTModel:
-    def __init__(self):
-        try:
-            self.use_faster_whisper = STTConfig.USE_FASTER_WHISPER
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            self.compute_type = self.get_compute_type()
-            self.model = self.initialize_model()
-        except Exception as e:
-            logger.error(f"STTModel 초기화 중 오류 발생: {str(e)}", exc_info=True)
-            raise
+    def __init__(self, gpu_memory_fraction=0.3):
+        self.model = None
+        self.use_faster_whisper = STTConfig.USE_FASTER_WHISPER
+        self.device = None
+        self.compute_type = None
+        self.gpu_memory_fraction = gpu_memory_fraction
 
     def get_compute_type(self):
         if self.device == "cuda":
@@ -24,9 +21,24 @@ class STTModel:
         return "int8" if self.use_faster_whisper else "float32"
 
     def initialize_model(self):
-        if self.use_faster_whisper:
-            return self.initialize_faster_whisper()
-        return self.initialize_whisper()
+        if self.model is None:
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    self.device = "cuda"
+                    torch.cuda.set_per_process_memory_fraction(self.gpu_memory_fraction)
+                else:
+                    self.device = "cpu"
+                self.compute_type = self.get_compute_type()
+                
+                if self.use_faster_whisper:
+                    self.model = self.initialize_faster_whisper()
+                else:
+                    self.model = self.initialize_whisper()
+                
+            except Exception as e:
+                logger.error(f"STTModel 초기화 중 오류 발생: {str(e)}", exc_info=True)
+                raise
 
     def initialize_faster_whisper(self):
         from faster_whisper import WhisperModel
@@ -37,8 +49,6 @@ class STTModel:
     def initialize_whisper(self):
         import whisper
         model = whisper.load_model(STTConfig.MODEL_SIZE).to(self.device)
-        if self.device == "cuda":
-            model = model.half()
         logger.info(f"STTModel 초기화 완료 (원본 whisper 사용, device: {self.device}, compute_type: {self.compute_type})")
         return model
 
@@ -93,8 +103,8 @@ class STTModel:
 
     def transcribe_whisper(self, preprocessed_audio):
         audio_array = np.frombuffer(preprocessed_audio, dtype=np.int16).astype(np.float32) / STTConfig.AUDIO_NORMALIZATION_FACTOR
-        if self.device == "cuda":
-            audio_array = torch.from_numpy(audio_array).to(self.device).half()
+        audio_array = torch.from_numpy(audio_array).to(self.device)
+        
         result = self.model.transcribe(audio_array, language="ko")
         words = [{"word": segment["text"], "start": segment["start"], "end": segment["end"]}
             for segment in result["segments"]]
