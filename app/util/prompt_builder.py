@@ -8,7 +8,13 @@ User Input Text:
 """
     prompt = f"""The following is the lecture material, lecture recording STT result, and user input text:
 {context}
-Based on the above content, please provide a detailed summary according to the following structure:
+Please provide a detailed summary of the above content. Format your response as follows:
+- Create an appropriate title for the content and wrap it in h3 tags
+- Use br tags for line breaks
+- Use hr tags for section separations
+- Wrap important keywords, concepts, and key points in <b> tags
+
+Include these sections:
 1. Core topic and overview (2-3 sentences)
 2. Key concepts (5-7 bullet points)
 3. Detailed content (2-3 sub-bullet points for each key concept)
@@ -32,7 +38,13 @@ Summary:
 """
     prompt = f"""The following is the lecture material, lecture recording STT result, user input text, and content summary:
 {context}
-Based on the above content, please generate questions in the following format:
+Please generate questions based on the above content. Format your response as follows:
+- Create an appropriate title for the questions and wrap it in h3 tags
+- Use br tags for line breaks
+- Use hr tags between major sections
+- Wrap important keywords, concepts, and key points in <b> tags
+
+Generate the following questions:
 1. 3 multiple-choice questions (4 options each)
    - Each question should cover key concepts and measure understanding, not just memorization.
 2. 3 short-answer questions
@@ -42,8 +54,14 @@ Based on the above content, please generate questions in the following format:
    - Another to evaluate application skills and critical thinking
 4. 1 additional question related to the user input text
    - This should consider the user's interests or points of inquiry.
-Please provide answers and brief explanations for each question.
-Also, briefly explain what learning objective each question is assessing.
+
+For each question, include:
+- The question itself
+- Answer options (for multiple choice)
+- Correct answer
+- Brief explanation
+- Learning objective being assessed
+
 Please provide the response in Korean.
 """
     return prompt
