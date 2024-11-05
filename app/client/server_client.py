@@ -37,9 +37,7 @@ class ServerClient:
         payload = {
             "taskId": task_id,
             "text": stt_result["text"],
-            "words": stt_result["words"],
-            "language": stt_result["language"],
-            "languageProbability": stt_result["language_probability"]
+            "words": stt_result["words"]
         }
 
         headers = {
